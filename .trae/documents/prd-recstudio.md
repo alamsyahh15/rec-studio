@@ -14,13 +14,13 @@ RecStudio adalah aplikasi web perekam layar yang menggabungkan tangkapan screen,
 | Halaman utama | Header studio | Menampilkan nama produk `RecStudio`, status aplikasi, dan nuansa visual studio gelap. |
 | Halaman utama | Canvas preview | Menampilkan preview gabungan screen capture sebagai latar dan webcam overlay yang bisa diaktifkan/nonaktifkan. |
 | Halaman utama | Overlay webcam | Menampilkan webcam dalam frame bulat atau rounded rectangle, posisi default di kanan bawah, dan dapat di-drag ke area mana pun di canvas. |
-| Halaman utama | Panel kontrol | Tombol mulai/berhenti rekam, toggle webcam, toggle mikrofon, meter level audio, serta timer format MM:SS. |
+| Halaman utama | Panel kontrol | Tombol mulai/berhenti rekam, toggle webcam, toggle mikrofon, meter level audio, timer format MM:SS, dan tombol Live PiP. |
 | Halaman utama | Status proses | Menampilkan state `idle`, `requesting-permissions`, `recording`, `processing`, dan `done`, termasuk spinner saat FFmpeg memproses video. |
-| Halaman utama | Hasil rekaman | Menampilkan video hasil, ukuran file, format hasil, dan tombol unduh MP4. |
+| Halaman utama | Hasil rekaman | Menampilkan video hasil, ukuran file, format hasil, tombol unduh MP4, dan tombol Open PiP. |
 | Halaman utama | Penanganan error | Menampilkan toast/peringatan jika izin screen atau mic ditolak, fallback bila MP4 langsung tidak didukung, dan opsi unduh WebM jika konversi gagal. |
 
 ## 3. Alur Inti
-Pengguna membuka halaman utama, memilih untuk merekam layar, lalu aplikasi meminta izin screen capture. Jika toggle webcam aktif, aplikasi meminta akses kamera; jika toggle mic aktif, aplikasi meminta akses mikrofon dan mulai membaca level audio. Setelah semua sumber siap, aplikasi menggambar hasil komposit screen dan webcam ke canvas secara real-time, lalu merekam stream canvas plus audio campuran. Saat pengguna menghentikan rekaman, aplikasi membersihkan resource, memproses file rekaman dengan FFmpeg.wasm jika perlu, lalu menampilkan preview dan menyediakan tombol unduh MP4.
+Pengguna membuka halaman utama, memilih untuk merekam layar, lalu aplikasi meminta izin screen capture. Jika toggle webcam aktif, aplikasi meminta akses kamera; jika toggle mic aktif, aplikasi meminta akses mikrofon dan mulai membaca level audio. Setelah semua sumber siap, aplikasi menggambar hasil komposit screen dan webcam ke canvas secara real-time, lalu merekam stream canvas plus audio campuran. Selama preview aktif, pengguna dapat membuka Live PiP dari canvas komposit melalui proxy video tersembunyi. Saat pengguna menghentikan rekaman, aplikasi membersihkan resource, memproses file rekaman dengan FFmpeg.wasm jika perlu, lalu menampilkan preview, menyediakan tombol unduh MP4, dan memungkinkan hasil akhir dibuka ke browser Picture-in-Picture.
 
 ```mermaid
 flowchart TD
@@ -55,9 +55,9 @@ flowchart TD
 | Halaman utama | Header studio | Judul besar, label state, subteks ringkas, garis dekoratif halus. |
 | Halaman utama | Canvas preview | Rasio 16:9, bingkai panel gelap, grid/scanline tipis, indikator live kecil saat recording. |
 | Halaman utama | Overlay webcam | Frame rounded dengan border bercahaya, shadow lembut, area drag responsif. |
-| Halaman utama | Panel kontrol | Tombol primer start/stop, switch webcam, switch mic, meter audio horizontal, timer digital. |
+| Halaman utama | Panel kontrol | Tombol primer start/stop, switch webcam, switch mic, meter audio horizontal, timer digital, tombol PiP sekunder. |
 | Halaman utama | Status proses | Spinner processing, teks status, dan pesan fallback/error yang kontras namun tidak mengganggu. |
-| Halaman utama | Hasil rekaman | Player video, label ukuran file, tombol unduh utama, kartu informasi hasil. |
+| Halaman utama | Hasil rekaman | Player video, label ukuran file, tombol unduh utama, tombol Open PiP, kartu informasi hasil. |
 
 ### 4.3 Responsivitas
 - Pendekatan desktop-first dengan pengalaman optimal pada layar laptop/desktop.

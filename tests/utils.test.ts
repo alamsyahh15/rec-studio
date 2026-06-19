@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { clampOverlay, pointInRect } from '../src/utils/geometry';
 import { formatBytes, formatDuration } from '../src/utils/format';
+import { canUsePictureInPicture, getPipButtonLabel } from '../src/utils/pip';
 
 describe('formatDuration', () => {
   it('merender waktu menjadi MM:SS', () => {
@@ -43,5 +44,30 @@ describe('geometry helpers', () => {
     const rect = { x: 10, y: 12, width: 100, height: 60 };
     expect(pointInRect(50, 30, rect)).toBe(true);
     expect(pointInRect(120, 30, rect)).toBe(false);
+  });
+});
+
+describe('picture in picture helpers', () => {
+  it('mendeteksi dukungan PiP dari capability browser', () => {
+    expect(
+      canUsePictureInPicture({
+        pictureInPictureEnabled: true,
+        hasRequestMethod: true,
+      }),
+    ).toBe(true);
+
+    expect(
+      canUsePictureInPicture({
+        pictureInPictureEnabled: true,
+        hasRequestMethod: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('menghasilkan label tombol PiP yang sesuai state', () => {
+    expect(getPipButtonLabel('live', false)).toBe('Live PiP');
+    expect(getPipButtonLabel('live', true)).toBe('Close Live PiP');
+    expect(getPipButtonLabel('result', false)).toBe('Open PiP');
+    expect(getPipButtonLabel('result', true)).toBe('Close Result PiP');
   });
 });

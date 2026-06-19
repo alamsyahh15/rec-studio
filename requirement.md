@@ -30,11 +30,13 @@ Build a full-featured screen + webcam + audio recorder web app using TypeScript 
   - [Start Recording] → [Stop Recording] toggle button (red pulsing dot when active)
   - Webcam toggle (on/off)
   - Mic toggle (on/off with live volume meter)
+  - Live PiP toggle to open the current preview in browser Picture-in-Picture window
   - Recording timer (MM:SS)
 - After recording stops: a **preview section** appears below with:
   - `<video>` player (autoplay, controls)
   - File size indicator
   - [⬇ Download MP4] button
+  - [Open PiP] button for the processed result video
 
 ### Webcam Overlay
 - Rendered in bottom-right corner of canvas by default
@@ -45,6 +47,11 @@ Build a full-featured screen + webcam + audio recorder web app using TypeScript 
 ### Mic Volume Meter
 - Small vertical or horizontal bar indicator next to the mic button
 - Uses `AnalyserNode` from Web Audio API for real-time level display
+
+### Browser Picture-in-Picture
+- Support browser-level Picture-in-Picture for the live preview canvas using a hidden proxy `<video>` fed by `canvas.captureStream()`
+- Support Picture-in-Picture for the final `<video>` result after processing
+- If Picture-in-Picture is unsupported, disable the controls gracefully and show a warning toast when needed
 
 ---
 

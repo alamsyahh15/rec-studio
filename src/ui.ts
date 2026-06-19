@@ -1,4 +1,5 @@
 import type { RecorderState, RecordingResult } from './types';
+import { getPipButtonLabel, type PipMode } from './utils/pip';
 import { formatBytes } from './utils/format';
 
 type NoticeTone = 'info' | 'warning' | 'error';
@@ -58,6 +59,10 @@ function buildAppMarkup(): string {
             Mic
           </button>
 
+          <button class="toggle-button" id="live-pip-button" type="button" disabled>
+            ${getPipButtonLabel('live', false)}
+          </button>
+
           <div class="meter-block" aria-live="polite">
             <span class="meter-label">Level</span>
             <div class="meter-track">
@@ -84,6 +89,9 @@ function buildAppMarkup(): string {
         </div>
         <video id="result-video" class="result-video" controls autoplay playsinline></video>
         <div class="result-actions">
+          <button class="toggle-button" id="result-pip-button" type="button" disabled>
+            ${getPipButtonLabel('result', false)}
+          </button>
           <a class="download-button" id="download-link" download="recording.mp4">Download MP4</a>
         </div>
       </section>
@@ -103,6 +111,7 @@ export class UIController {
   private readonly recordButtonLabel: HTMLElement;
   private readonly webcamToggle: HTMLButtonElement;
   private readonly micToggle: HTMLButtonElement;
+  private readonly livePipButton: HTMLButtonElement;
   private readonly meterFill: HTMLElement;
   private readonly processingOverlay: HTMLElement;
   private readonly processingTitle: HTMLElement;
@@ -112,6 +121,7 @@ export class UIController {
   private readonly resultVideo: HTMLVideoElement;
   private readonly resultSize: HTMLElement;
   private readonly resultFormat: HTMLElement;
+  private readonly resultPipButton: HTMLButtonElement;
   private readonly downloadLink: HTMLAnchorElement;
   private readonly toastRegion: HTMLElement;
 
@@ -127,6 +137,7 @@ export class UIController {
     this.recordButtonLabel = this.requireElement('record-button-label');
     this.webcamToggle = this.requireElement<HTMLButtonElement>('webcam-toggle');
     this.micToggle = this.requireElement<HTMLButtonElement>('mic-toggle');
+    this.livePipButton = this.requireElement<HTMLButtonElement>('live-pip-button');
     this.meterFill = this.requireElement('meter-fill');
     this.processingOverlay = this.requireElement('processing-overlay');
     this.processingTitle = this.requireElement('processing-title');
@@ -136,6 +147,7 @@ export class UIController {
     this.resultVideo = this.requireElement<HTMLVideoElement>('result-video');
     this.resultSize = this.requireElement('result-size');
     this.resultFormat = this.requireElement('result-format');
+    this.resultPipButton = this.requireElement<HTMLButtonElement>('result-pip-button');
     this.downloadLink = this.requireElement<HTMLAnchorElement>('download-link');
     this.toastRegion = this.requireElement('toast-region');
   }
@@ -150,6 +162,18 @@ export class UIController {
 
   get micButton(): HTMLButtonElement {
     return this.micToggle;
+  }
+
+  get livePipActionButton(): HTMLButtonElement {
+    return this.livePipButton;
+  }
+
+  get resultPipActionButton(): HTMLButtonElement {
+    return this.resultPipButton;
+  }
+
+  get resultVideoElement(): HTMLVideoElement {
+    return this.resultVideo;
   }
 
   isWebcamEnabled(): boolean {
@@ -173,6 +197,17 @@ export class UIController {
   setControlsLocked(locked: boolean): void {
     this.webcamToggle.disabled = locked;
     this.micToggle.disabled = locked;
+  }
+
+  setPipButtonEnabled(mode: PipMode, enabled: boolean): void {
+    const button = mode === 'live' ? this.livePipButton : this.resultPipButton;
+    button.disabled = !enabled;
+  }
+
+  setPipButtonState(mode: PipMode, active: boolean): void {
+    const button = mode === 'live' ? this.livePipButton : this.resultPipButton;
+    button.classList.toggle('is-active', active);
+    button.textContent = getPipButtonLabel(mode, active);
   }
 
   setState(state: RecorderState, message: string): void {
@@ -225,6 +260,7 @@ export class UIController {
     this.resultVideo.removeAttribute('src');
     this.resultVideo.load();
     this.downloadLink.removeAttribute('href');
+    this.setPipButtonState('result', false);
   }
 
   showToast(message: string, tone: NoticeTone = 'info'): void {

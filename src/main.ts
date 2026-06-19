@@ -5,6 +5,7 @@ import { RecorderService, SCREEN_DENIED_MESSAGE } from './recorder';
 import type { RecorderState, RecordingResult } from './types';
 import { UIController } from './ui';
 import { formatDuration } from './utils/format';
+import { canUsePictureInPicture } from './utils/pip';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) {
@@ -15,21 +16,41 @@ const ui = new UIController(root);
 const composer = new CanvasComposer(ui.previewCanvas);
 const recorder = new RecorderService();
 const ffmpeg = new FFmpegService();
+const livePipVideo = document.createElement('video');
+
+livePipVideo.className = 'pip-proxy-video';
+livePipVideo.muted = true;
+livePipVideo.autoplay = true;
+livePipVideo.playsInline = true;
+livePipVideo.srcObject = composer.captureStream(30);
+root.appendChild(livePipVideo);
 
 let appState: RecorderState = 'idle';
 let recordingStartedAt = 0;
 let timerId = 0;
 let meterId = 0;
 let currentResult: RecordingResult | null = null;
+const pictureInPictureSupported = canUsePictureInPicture({
+  pictureInPictureEnabled: document.pictureInPictureEnabled,
+  hasRequestMethod: 'requestPictureInPicture' in HTMLVideoElement.prototype,
+});
+
+ui.setPipButtonEnabled('live', pictureInPictureSupported);
+ui.setPipButtonEnabled('result', false);
+ui.setPipButtonState('live', false);
+ui.setPipButtonState('result', false);
 
 function setAppState(state: RecorderState, message: string): void {
   appState = state;
   ui.setState(state, message);
 }
 
-function cleanupResult(): void {
+async function cleanupResult(): Promise<void> {
   if (!currentResult) {
     return;
+  }
+  if (document.pictureInPictureElement === ui.resultVideoElement) {
+    await document.exitPictureInPicture().catch(() => undefined);
   }
   URL.revokeObjectURL(currentResult.objectUrl);
   currentResult = null;
@@ -67,8 +88,9 @@ async function startRecording(): Promise<void> {
     return;
   }
 
-  cleanupResult();
+  await cleanupResult();
   ui.clearResult();
+  ui.setPipButtonEnabled('result', false);
   ui.setProcessing(false);
   ui.setControlsLocked(true);
   setAppState('requesting-permissions', 'Meminta izin screen, webcam, dan mikrofon.');
@@ -136,11 +158,12 @@ async function stopRecording(stoppedByScreenTrack = false): Promise<void> {
   try {
     const rawRecording = await recorder.stopRecording();
     composer.stop();
-    cleanupResult();
+    await cleanupResult();
     currentResult = await ffmpeg.processRecording(rawRecording, (status) => {
       ui.setProcessing(true, status.label, status.detail);
     });
     ui.showResult(currentResult);
+    ui.setPipButtonEnabled('result', pictureInPictureSupported);
 
     if (currentResult.usedFallback) {
       setAppState('done', 'FFmpeg gagal. File WebM fallback tetap siap diunduh.');
@@ -209,6 +232,53 @@ async function handleMicToggle(): Promise<void> {
   ui.setMicrophoneEnabled(nextState);
 }
 
+async function togglePictureInPicture(target: 'live' | 'result'): Promise<void> {
+  if (!pictureInPictureSupported) {
+    ui.showToast('Browser ini belum mendukung Picture-in-Picture.', 'warning');
+    return;
+  }
+
+  const video = target === 'live' ? livePipVideo : ui.resultVideoElement;
+
+  if (target === 'result' && !currentResult) {
+    ui.showToast('Belum ada hasil rekaman untuk dibuka ke PiP.', 'warning');
+    return;
+  }
+
+  try {
+    if (document.pictureInPictureElement === video) {
+      await document.exitPictureInPicture();
+      syncPipButtons();
+      return;
+    }
+
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+    }
+
+    await video.play().catch(() => undefined);
+    await video.requestPictureInPicture();
+    syncPipButtons();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Gagal membuka Picture-in-Picture.';
+    ui.showToast(message, 'warning');
+    syncPipButtons();
+  }
+}
+
+function syncPipButtons(): void {
+  const activeElement = document.pictureInPictureElement;
+  ui.setPipButtonState('live', activeElement === livePipVideo);
+  ui.setPipButtonState('result', activeElement === ui.resultVideoElement);
+  ui.setPipButtonEnabled('live', pictureInPictureSupported);
+  ui.setPipButtonEnabled('result', pictureInPictureSupported && Boolean(currentResult));
+}
+
+livePipVideo.addEventListener('enterpictureinpicture', syncPipButtons);
+livePipVideo.addEventListener('leavepictureinpicture', syncPipButtons);
+ui.resultVideoElement.addEventListener('enterpictureinpicture', syncPipButtons);
+ui.resultVideoElement.addEventListener('leavepictureinpicture', syncPipButtons);
+
 ui.recordActionButton.addEventListener('click', () => {
   if (appState === 'recording') {
     void stopRecording();
@@ -227,8 +297,19 @@ ui.micButton.addEventListener('click', () => {
   void handleMicToggle();
 });
 
+ui.livePipActionButton.addEventListener('click', () => {
+  void togglePictureInPicture('live');
+});
+
+ui.resultPipActionButton.addEventListener('click', () => {
+  void togglePictureInPicture('result');
+});
+
 window.addEventListener('beforeunload', () => {
-  cleanupResult();
+  void cleanupResult();
+  if (document.pictureInPictureElement) {
+    void document.exitPictureInPicture().catch(() => undefined);
+  }
   void recorder.close();
   composer.dispose();
 });

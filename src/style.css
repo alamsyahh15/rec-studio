@@ -273,6 +273,12 @@ button:disabled {
     background 160ms ease;
 }
 
+.toggle-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .record-button:hover,
 .toggle-button:hover,
 .download-button:hover {
@@ -386,6 +392,8 @@ button:disabled {
 
 .result-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: flex-end;
   margin-top: 20px;
 }
@@ -394,6 +402,15 @@ button:disabled {
   min-width: 192px;
   background: linear-gradient(180deg, rgba(110, 231, 183, 0.22), rgba(110, 231, 183, 0.12));
   border-color: rgba(110, 231, 183, 0.28);
+}
+
+.pip-proxy-video {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  inset: auto auto -9999px -9999px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .toast-region {

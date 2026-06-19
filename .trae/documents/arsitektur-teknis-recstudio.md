@@ -61,7 +61,7 @@ interface CaptureOptions {
 ## 5. Struktur Modul Frontend
 | File | Tanggung jawab |
 |------|----------------|
-| `src/main.ts` | Bootstrap aplikasi, inisialisasi UI, wiring event antarmodul. |
+| `src/main.ts` | Bootstrap aplikasi, inisialisasi UI, wiring event antarmodul, serta orkestrasi browser Picture-in-Picture. |
 | `src/types.ts` | Enum, interface, dan kontrak data bersama. |
 | `src/ui.ts` | Render elemen UI, state label, toast, timer, meter audio, dan area hasil. |
 | `src/canvas.ts` | Menggambar screen dan webcam ke canvas, mengelola drag overlay dan RAF loop. |
@@ -81,7 +81,8 @@ interface CaptureOptions {
 7. `MediaRecorder` merekam stream komposit dalam `video/mp4` jika didukung, jika tidak maka `video/webm`.
 8. Saat berhenti, semua track dihentikan, loop dihentikan, dan blob hasil dikirim ke `ffmpeg.ts`.
 9. `ffmpeg.ts` memuat core wasm secara lazy lalu menghasilkan file MP4; jika gagal, blob mentah tetap tersedia.
-10. `ui.ts` menampilkan preview, ukuran file, dan tombol unduh hasil.
+10. `ui.ts` menampilkan preview, ukuran file, tombol unduh hasil, dan kontrol Picture-in-Picture.
+11. `main.ts` mengelola proxy `<video>` tersembunyi dari `canvas.captureStream()` untuk Live PiP dan memakai `<video>` hasil rekaman untuk Result PiP.
 
 ## 7. Penanganan Error
 - Jika izin screen ditolak, tampilkan toast `Screen access was denied` dan kembali ke state `idle`.
@@ -89,6 +90,7 @@ interface CaptureOptions {
 - Jika izin mikrofon ditolak, nonaktifkan mikrofon, tampilkan peringatan, dan lanjutkan tanpa audio mic.
 - Jika MIME `video/mp4` tidak didukung `MediaRecorder`, fallback otomatis ke `video/webm`.
 - Jika FFmpeg gagal dimuat atau gagal memproses, tampilkan pesan fallback dan tawarkan unduhan file WebM.
+- Jika browser tidak mendukung Picture-in-Picture, nonaktifkan tombol PiP dan pertahankan alur utama tanpa error.
 
 ## 8. Strategi Kualitas
 - Aktifkan `strict` pada TypeScript untuk keamanan tipe.
